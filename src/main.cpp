@@ -83,10 +83,18 @@ byte arrowRightSymbol[8] = {
   0b00000
 };
 
+int const CLOCK_MODE = 0;
+int const STOPWATCH_MODE = 1;
+int const STOPWATCH_MODE_RUNNING = 2;
+int const TIMER_MODE = 3;
+int const TIMER_MODE_RUNNING = 4;
+int const ALARM_MODE = 5;
+
 void exibirDataHora(RTC_DS1307& rtc, LiquidCrystal_I2C& lcd);
 void printCronometro(unsigned long centesimos);
 void printAlarme(unsigned long alarmeDueTime);
 void printTimer(unsigned long centesimos);
+void printMenu(int mode);
 
 void setup() {
   // put your setup code here, to run once:
@@ -129,7 +137,19 @@ void loop() {
   // put your main code here, to run repeatedly:
   //printCronometro(10000);
   //printTimer(count--);
-  printAlarme(30000);
+  //printAlarme(30000);
+  printMenu(CLOCK_MODE);
+  delay(3000);
+  printMenu(STOPWATCH_MODE);
+  delay(3000);
+  printMenu(STOPWATCH_MODE_RUNNING);
+  delay(3000);
+  printMenu(TIMER_MODE);
+  delay(3000);
+  printMenu(TIMER_MODE_RUNNING);
+  delay(3000);
+  printMenu(ALARM_MODE);
+  delay(1000);
   delay(10);
 }
 
@@ -239,4 +259,71 @@ void printAlarme(unsigned long alarmeDueTime) {
   lcd.setCursor(2, 0);
   lcd.print("08:00");
   //lcd.print(buffer);
+}
+
+
+
+void printMenuButtons(uint8_t btn_tl, uint8_t btn_tr, uint8_t btn_ll, uint8_t btn_lr) {
+  lcd.setCursor(0, 0);
+  if (btn_tl >= 32 && btn_tl <= 126)
+    lcd.write((char) btn_tl);
+  else
+    lcd.write(btn_tl);
+
+  lcd.setCursor(0, 1);
+  if (btn_tr >= 32 && btn_tr <= 126)
+    lcd.write((char) btn_tr);
+  else
+    lcd.write(btn_tr);
+
+  lcd.setCursor(15, 0);
+  if (btn_ll >= 32 && btn_ll <= 126)
+    lcd.write((char) btn_ll);
+  else
+    lcd.write(btn_ll);
+  
+  lcd.setCursor(15, 1);
+  if (btn_lr >= 32 && btn_lr <= 126)
+    lcd.write((char) btn_lr);
+  else
+    lcd.write(btn_lr);
+}
+
+void printMenu(int mode) {
+
+  switch (mode)
+  {
+    case (CLOCK_MODE):
+      printMenuButtons('E', 'M', ' ', ' ');
+      lcd.setCursor(2, 0);
+      lcd.print("CLOCK");
+      break;
+    case (STOPWATCH_MODE):
+      printMenuButtons(' ', 'M', byte(0) /*▶*/, 'R');
+      lcd.setCursor(2, 0);
+      lcd.print("STW");
+      break;
+      case (STOPWATCH_MODE_RUNNING):
+      printMenuButtons(' ', 'M', byte(4) /*⏸*/, 'R');
+      lcd.setCursor(2, 0);
+      lcd.print("STWR");
+      break;
+    case (TIMER_MODE):
+      printMenuButtons('E', 'M', byte(0) /*▶*/, 'R');
+      lcd.setCursor(2, 0);
+      lcd.print("TIMER");
+      break;
+    case (TIMER_MODE_RUNNING):
+      printMenuButtons(' ', 'M', byte(4) /*⏸*/, 'R');
+      lcd.setCursor(2, 0);
+      lcd.print("TIMERUNING");
+      break;
+    case (ALARM_MODE):
+      printMenuButtons(' ', 'M', ' ', ' ');
+      lcd.setCursor(2, 0);
+      lcd.print("ALARM");
+      break;
+    default:
+      break;
+  }
 }
