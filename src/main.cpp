@@ -262,31 +262,20 @@ void printAlarme(unsigned long alarmeDueTime) {
 }
 
 
+void writeToLcd(int column, int row, uint8_t value) {
+  lcd.setCursor(column, row);
+  if (value >= 32 && value <= 126) {
+    lcd.write((char) value);
+  } else {
+    lcd.write(value);
+  }
+}
 
 void printMenuButtons(uint8_t btn_tl, uint8_t btn_tr, uint8_t btn_ll, uint8_t btn_lr) {
-  lcd.setCursor(0, 0);
-  if (btn_tl >= 32 && btn_tl <= 126)
-    lcd.write((char) btn_tl);
-  else
-    lcd.write(btn_tl);
-
-  lcd.setCursor(0, 1);
-  if (btn_tr >= 32 && btn_tr <= 126)
-    lcd.write((char) btn_tr);
-  else
-    lcd.write(btn_tr);
-
-  lcd.setCursor(15, 0);
-  if (btn_ll >= 32 && btn_ll <= 126)
-    lcd.write((char) btn_ll);
-  else
-    lcd.write(btn_ll);
-  
-  lcd.setCursor(15, 1);
-  if (btn_lr >= 32 && btn_lr <= 126)
-    lcd.write((char) btn_lr);
-  else
-    lcd.write(btn_lr);
+  writeToLcd(0, 0, btn_tl);
+  writeToLcd(15, 0, btn_tr);
+  writeToLcd(0, 1, btn_ll);
+  writeToLcd(15, 1, btn_lr);
 }
 
 void printMenu(int mode) {
@@ -294,32 +283,32 @@ void printMenu(int mode) {
   switch (mode)
   {
     case (CLOCK_MODE):
-      printMenuButtons('E', 'M', ' ', ' ');
+      printMenuButtons('E', ' ', 'M', ' ');
       lcd.setCursor(2, 0);
       lcd.print("CLOCK");
       break;
     case (STOPWATCH_MODE):
-      printMenuButtons(' ', 'M', byte(0) /*▶*/, 'R');
+      printMenuButtons(' ', byte(0) /*▶*/, 'M', 'R');
       lcd.setCursor(2, 0);
       lcd.print("STW");
       break;
       case (STOPWATCH_MODE_RUNNING):
-      printMenuButtons(' ', 'M', byte(4) /*⏸*/, 'R');
+      printMenuButtons(' ', byte(4) /*⏸*/, 'M', 'R');
       lcd.setCursor(2, 0);
       lcd.print("STWR");
       break;
     case (TIMER_MODE):
-      printMenuButtons('E', 'M', byte(0) /*▶*/, 'R');
+      printMenuButtons('E', byte(0) /*▶*/, 'M', 'R');
       lcd.setCursor(2, 0);
       lcd.print("TIMER");
       break;
     case (TIMER_MODE_RUNNING):
-      printMenuButtons(' ', 'M', byte(4) /*⏸*/, 'R');
+      printMenuButtons(' ', byte(4) /*⏸*/, 'M', 'R');
       lcd.setCursor(2, 0);
       lcd.print("TIMERUNING");
       break;
     case (ALARM_MODE):
-      printMenuButtons(' ', 'M', ' ', ' ');
+      printMenuButtons(' ', ' ', 'M', ' ');
       lcd.setCursor(2, 0);
       lcd.print("ALARM");
       break;
