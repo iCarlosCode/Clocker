@@ -84,11 +84,14 @@ byte arrowRightSymbol[8] = {
 };
 
 int const CLOCK_MODE = 0;
-int const STOPWATCH_MODE = 1;
-int const STOPWATCH_MODE_RUNNING = 2;
-int const TIMER_MODE = 3;
-int const TIMER_MODE_RUNNING = 4;
-int const ALARM_MODE = 5;
+int const CLOCK_EDIT_MODE = 1;
+int const STOPWATCH_MODE = 2;
+int const STOPWATCH_MODE_RUNNING = 3;
+int const TIMER_MODE = 4;
+int const TIMER_MODE_RUNNING = 5;
+int const TIMER_MODE_EDITING = 6;
+int const ALARM_MODE = 7;
+int const ALARM_MODE_EDITING = 8;
 
 void exibirDataHora(RTC_DS1307& rtc, LiquidCrystal_I2C& lcd);
 void printCronometro(unsigned long centesimos);
@@ -140,6 +143,8 @@ void loop() {
   //printAlarme(30000);
   printMenu(CLOCK_MODE);
   delay(3000);
+  printMenu(CLOCK_EDIT_MODE);
+  delay(3000);
   printMenu(STOPWATCH_MODE);
   delay(3000);
   printMenu(STOPWATCH_MODE_RUNNING);
@@ -148,8 +153,12 @@ void loop() {
   delay(3000);
   printMenu(TIMER_MODE_RUNNING);
   delay(3000);
+  printMenu(TIMER_MODE_EDITING);
+  delay(3000);
   printMenu(ALARM_MODE);
-  delay(1000);
+  delay(3000);
+  printMenu(ALARM_MODE_EDITING);
+  delay(3000);
   delay(10);
 }
 
@@ -287,6 +296,11 @@ void printMenu(int mode) {
       lcd.setCursor(2, 0);
       lcd.print("CLOCK");
       break;
+    case (CLOCK_EDIT_MODE):
+      printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, 'M', byte(5) /*➡*/);
+      lcd.setCursor(2, 0);
+      lcd.print("CLOCKE");
+      break;
     case (STOPWATCH_MODE):
       printMenuButtons(' ', byte(0) /*▶*/, 'M', 'R');
       lcd.setCursor(2, 0);
@@ -307,10 +321,20 @@ void printMenu(int mode) {
       lcd.setCursor(2, 0);
       lcd.print("TIMERUNING");
       break;
+    case (TIMER_MODE_EDITING):
+      printMenuButtons(' ', byte(4) /*⏸*/, 'M', 'R');
+      lcd.setCursor(2, 0);
+      lcd.print("TIMEREd");
+      break;
     case (ALARM_MODE):
       printMenuButtons(' ', ' ', 'M', ' ');
       lcd.setCursor(2, 0);
       lcd.print("ALARM");
+      break;
+    case (ALARM_MODE_EDITING):
+      printMenuButtons(' ', ' ', 'M', ' ');
+      lcd.setCursor(2, 0);
+      lcd.print("ALARMed");
       break;
     default:
       break;
