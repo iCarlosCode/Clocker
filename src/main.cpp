@@ -11,8 +11,8 @@
 #define E 8
 
 #define BTNTL 4
-#define BTNTR 5
-#define BTNLL 6
+#define BTNLL 5
+#define BTNTR 6
 #define BTNLR 7
 
 
@@ -98,6 +98,8 @@ int const TIMER_MODE_EDITING = 6;
 int const ALARM_MODE = 7;
 int const ALARM_MODE_EDITING = 8;
 
+volatile int MODE = 0;
+
 void exibirDataHora(RTC_DS1307& rtc, LiquidCrystal_I2C& lcd);
 void printCronometro(unsigned long centesimos);
 void printAlarme(unsigned long alarmeDueTime);
@@ -162,25 +164,57 @@ void loop() {
   //printCronometro(10000);
   //printTimer(count--);
   //printAlarme(30000);
-  printMenu(CLOCK_MODE);
-  delay(3000);
-  printMenu(CLOCK_EDIT_MODE);
-  delay(3000);
-  printMenu(STOPWATCH_MODE);
-  delay(3000);
-  printMenu(STOPWATCH_MODE_RUNNING);
-  delay(3000);
-  printMenu(TIMER_MODE);
-  delay(3000);
-  printMenu(TIMER_MODE_RUNNING);
-  delay(3000);
-  printMenu(TIMER_MODE_EDITING);
-  delay(3000);
-  printMenu(ALARM_MODE);
-  delay(3000);
-  printMenu(ALARM_MODE_EDITING);
-  delay(3000);
-  delay(10);
+  switch (MODE)
+  {
+    case CLOCK_MODE:
+      printMenu(CLOCK_MODE);
+      break;
+    case CLOCK_EDIT_MODE:
+      printMenu(CLOCK_EDIT_MODE);
+      break;
+    case STOPWATCH_MODE:
+      printMenu(STOPWATCH_MODE);
+      break;
+    case STOPWATCH_MODE_RUNNING:
+      printMenu(STOPWATCH_MODE_RUNNING);
+      break;
+    case TIMER_MODE:
+      printMenu(TIMER_MODE);
+      break;
+    case TIMER_MODE_RUNNING:
+      printMenu(TIMER_MODE_RUNNING);
+      break;
+    case TIMER_MODE_EDITING:
+      printMenu(TIMER_MODE_EDITING);
+      break;
+    case ALARM_MODE:
+      printMenu(ALARM_MODE);
+      break;
+    case ALARM_MODE_EDITING:
+      printMenu(ALARM_MODE_EDITING);
+      break;
+    default:
+      break;
+  }
+  //printMenu(CLOCK_MODE);
+  //delay(3000);
+  //printMenu(CLOCK_EDIT_MODE);
+  //delay(3000);
+  //printMenu(STOPWATCH_MODE);
+  //delay(3000);
+  //printMenu(STOPWATCH_MODE_RUNNING);
+  //delay(3000);
+  //printMenu(TIMER_MODE);
+  //delay(3000);
+  //printMenu(TIMER_MODE_RUNNING);
+  //delay(3000);
+  //printMenu(TIMER_MODE_EDITING);
+  //delay(3000);
+  //printMenu(ALARM_MODE);
+  //delay(3000);
+  //printMenu(ALARM_MODE_EDITING);
+  //delay(3000);
+  //delay(10);
 }
 
 void printCronometro(unsigned long centesimos) {
@@ -374,6 +408,11 @@ void isrBtnTR() {
 
 void isrBtnLL() {
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  Serial.println("M");
+  MODE++;
+  if (MODE > 8) {
+    MODE = 0;
+  }
 }
 
 void isrBtnLR() {
