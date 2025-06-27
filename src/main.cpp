@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "RTClib.h"
-#include <LiquidCrystal.h>
+#include <PinChangeInterrupt.h>
 #include <LiquidCrystal_I2C.h>
 #define D4 4
 #define D5 5
@@ -10,11 +10,16 @@
 #define R 9
 #define E 8
 
+#define BTNTL 4
+#define BTNTR 5
+#define BTNLL 6
+#define BTNLR 7
+
 
 // RTC e LCD
 
 RTC_DS1307 rtc;
-LiquidCrystal LCD(R, E, D4, D5, D6, D7);
+//LiquidCrystal LCD(R, E, D4, D5, D6, D7);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 byte playSymbol[8] = {
@@ -98,12 +103,28 @@ void printCronometro(unsigned long centesimos);
 void printAlarme(unsigned long alarmeDueTime);
 void printTimer(unsigned long centesimos);
 void printMenu(int mode);
+void isrBtnTL();
+void isrBtnTR();
+void isrBtnLL();
+void isrBtnLR();
 
 void setup() {
+  // Configura os pinos como entrada com pull-up
+  pinMode(BTNTL, INPUT_PULLUP);
+  pinMode(BTNTR, INPUT_PULLUP);
+  pinMode(BTNLL, INPUT_PULLUP);
+  pinMode(BTNLR, INPUT_PULLUP);
+ 
+  // Anexa interrupções para cada botão (borda de descida)
+  attachPinChangeInterrupt(digitalPinToPinChangeInterrupt(BTNTL), isrBtnTL, FALLING);
+  attachPinChangeInterrupt(digitalPinToPinChangeInterrupt(BTNTR), isrBtnTR, FALLING);
+  attachPinChangeInterrupt(digitalPinToPinChangeInterrupt(BTNLL), isrBtnLL, FALLING);
+  attachPinChangeInterrupt(digitalPinToPinChangeInterrupt(BTNLR), isrBtnLR, FALLING);
+
   // put your setup code here, to run once:
-  LCD.begin(16, 2);
-  LCD.setCursor(0, 0);
-  LCD.print("Oi mundo!");
+  //LCD.begin(16, 2);
+  //LCD.setCursor(0, 0);
+  //LCD.print("Oi mundo!");
   Serial.begin(9600);
 
   Wire.begin();
@@ -339,4 +360,22 @@ void printMenu(int mode) {
     default:
       break;
   }
+}
+
+// Rotinas de interrupção
+void isrBtnTL() {
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  Serial.println("A");
+}
+
+void isrBtnTR() {
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
+
+void isrBtnLL() {
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
+
+void isrBtnLR() {
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
