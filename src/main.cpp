@@ -3,6 +3,7 @@
 #include "RTClib.h"
 #include <PinChangeInterrupt.h>
 #include <LiquidCrystal_I2C.h>
+#include <TimerOne.h>
 #define D4 4
 #define D5 5
 #define D6 6
@@ -14,6 +15,21 @@
 #define BTNLL 5
 #define BTNTR 6
 #define BTNLR 7
+
+void exibirDataHora(RTC_DS1307& rtc, LiquidCrystal_I2C& lcd);
+void printCronometro(unsigned long centesimos);
+void printAlarme(unsigned long alarmeDueTime);
+void printTimer(unsigned long centesimos);
+void printMenu(int mode);
+void isrBtnTL();
+void isrBtnTR();
+void isrBtnLL();
+void isrBtnLR();
+void startStopWatchTimer();
+void stopStopWatchTimer();
+void resetStopWatchTimer();
+void incrementStopWatchTime();
+void setupStopWatchTimer();
 
 
 // RTC e LCD
@@ -99,16 +115,7 @@ int const ALARM_MODE = 7;
 int const ALARM_MODE_EDITING = 8;
 
 volatile int MODE = 0;
-
-void exibirDataHora(RTC_DS1307& rtc, LiquidCrystal_I2C& lcd);
-void printCronometro(unsigned long centesimos);
-void printAlarme(unsigned long alarmeDueTime);
-void printTimer(unsigned long centesimos);
-void printMenu(int mode);
-void isrBtnTL();
-void isrBtnTR();
-void isrBtnLL();
-void isrBtnLR();
+volatile unsigned long timeCs = 0;
 
 void setup() {
   // Configura os pinos como entrada com pull-up
@@ -123,11 +130,14 @@ void setup() {
   attachPinChangeInterrupt(digitalPinToPinChangeInterrupt(BTNLL), isrBtnLL, FALLING);
   attachPinChangeInterrupt(digitalPinToPinChangeInterrupt(BTNLR), isrBtnLR, FALLING);
 
+  //Timer1.stop(); // Começa parado
+
   // put your setup code here, to run once:
   //LCD.begin(16, 2);
   //LCD.setCursor(0, 0);
   //LCD.print("Oi mundo!");
   Serial.begin(9600);
+  Serial.print("Começar");
 
   Wire.begin();
   rtc.begin();
@@ -153,7 +163,8 @@ void setup() {
 unsigned long count = 100000;
 
 void loop() {
-  unsigned long currentMillis = millis();
+  //Timer1.start();
+  unsigned long currentMillis = millis(); 
 
   // Alternar o estado de piscar
   
@@ -164,6 +175,9 @@ void loop() {
   //printCronometro(10000);
   //printTimer(count--);
   //printAlarme(30000);
+  
+  
+
   switch (MODE)
   {
     case CLOCK_MODE:
@@ -196,25 +210,21 @@ void loop() {
     default:
       break;
   }
-  //printMenu(CLOCK_MODE);
-  //delay(3000);
-  //printMenu(CLOCK_EDIT_MODE);
-  //delay(3000);
-  //printMenu(STOPWATCH_MODE);
-  //delay(3000);
-  //printMenu(STOPWATCH_MODE_RUNNING);
-  //delay(3000);
-  //printMenu(TIMER_MODE);
-  //delay(3000);
-  //printMenu(TIMER_MODE_RUNNING);
-  //delay(3000);
-  //printMenu(TIMER_MODE_EDITING);
-  //delay(3000);
-  //printMenu(ALARM_MODE);
-  //delay(3000);
-  //printMenu(ALARM_MODE_EDITING);
-  //delay(3000);
-  //delay(10);
+  if (MODE == STOPWATCH_MODE || MODE == STOPWATCH_MODE_RUNNING) {
+    noInterrupts();
+    int totalSegundos = timeCs / 100;
+    int h = totalSegundos / 3600;
+    int m = (totalSegundos % 3600) / 60;
+    int s = totalSegundos % 60;
+    int cs = timeCs % 100; // centésimos restantes
+    interrupts();
+
+    char buffer[20];
+    // Formato: HH:MM:SS.CC
+    sprintf(buffer, "%02d:%02d:%02d.%02d", h, m, s, cs);
+    lcd.setCursor(2, 0);
+    lcd.print(buffer);
+  }
 }
 
 void printCronometro(unsigned long centesimos) {
@@ -404,17 +414,63 @@ void isrBtnTL() {
 
 void isrBtnTR() {
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  if (MODE == STOPWATCH_MODE) {
+    startStopWatchTimer();
+  }
+  else if (MODE == STOPWATCH_MODE_RUNNING) {
+    stopStopWatchTimer();
+  }
 }
 
 void isrBtnLL() {
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-  Serial.println("M");
+  //Serial.println("M");
   MODE++;
   if (MODE > 8) {
     MODE = 0;
+  }
+
+  if (MODE == STOPWATCH_MODE) {
+    setupStopWatchTimer();
   }
 }
 
 void isrBtnLR() {
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  if (MODE == STOPWATCH_MODE || MODE == STOPWATCH_MODE_RUNNING) {
+    resetStopWatchTimer();
+  }
+}
+
+void startStopWatchTimer() {
+  Timer1.start();
+  noInterrupts();
+  MODE = STOPWATCH_MODE_RUNNING;
+  interrupts();
+}
+
+void stopStopWatchTimer() {
+  Timer1.stop();
+  noInterrupts();
+  MODE = STOPWATCH_MODE;
+  interrupts();
+}
+
+void resetStopWatchTimer() {
+  noInterrupts();
+  timeCs = 0;
+  interrupts();
+}
+
+void incrementStopWatchTime() {
+  timeCs++;
+}
+
+void setupStopWatchTimer() {
+  Timer1.initialize(10000); // 1000 microssegundos = 1 milissegundo
+  Timer1.attachInterrupt(incrementStopWatchTime);
+  Timer1.stop();
+  noInterrupts();
+  timeCs = 0;
+  interrupts();
 }
