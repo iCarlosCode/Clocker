@@ -215,16 +215,14 @@ void printHhMmSsFromSeconds(unsigned long totalSegundos) {
     //Serial.println(totalSegundos);
 }
 
-void generateBody() {
-  printMenu(MODE);
-
-  if (MODE == STOPWATCH_MODE || MODE == STOPWATCH_MODE_RUNNING) {
+void printHhMmSsDsFromCSeconds() {
     noInterrupts();
-    int totalSegundos = timeCs / 100;
-    int h = totalSegundos / 3600;
-    int m = (totalSegundos % 3600) / 60;
-    int s = totalSegundos % 60;
+    int totalCSegundos = timeCs / 100;
+    int h = totalCSegundos / 3600;
+    int m = (totalCSegundos % 3600) / 60;
+    int s = totalCSegundos % 60;
     int cs = timeCs % 100; // centésimos restantes
+    cs = (cs == 1) ? 0: cs; // Gambiarra pra resolver o .01
     interrupts();
 
     char buffer[20];
@@ -232,6 +230,13 @@ void generateBody() {
     sprintf(buffer, "%02d:%02d:%02d.%02d", h, m, s, cs);
     lcd.setCursor(MENU_PADDING, 0);
     lcd.print(buffer);
+}
+
+void generateBody() {
+  printMenu(MODE);
+
+  if (MODE == STOPWATCH_MODE || MODE == STOPWATCH_MODE_RUNNING) {
+    printHhMmSsDsFromCSeconds();
   }
   else if (MODE == TIMER_MODE || MODE == TIMER_MODE_RUNNING) {
     printHhMmSsFromSeconds(timeS);
@@ -293,8 +298,8 @@ void printMenu(int mode) {
   {
     case (CLOCK_MODE):
       printMenuButtons('E', ' ', 'M', ' ');
-      lcd.setCursor(MENU_PADDING, 0);
-      lcd.print("CLOCK");
+      //lcd.setCursor(MENU_PADDING, 0);
+      //lcd.print("CLOCK");
       break;
     case (CLOCK_EDIT_MODE):
       printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, ' ', byte(5) /*➡*/);
@@ -578,9 +583,7 @@ void setupStopWatchTimer() {
   Timer1.initialize(10000); // 1000 microssegundos = 1 milissegundo
   Timer1.attachInterrupt(incrementStopWatchTime);
   Timer1.stop();
-  noInterrupts();
-  timeCs = 0;
-  interrupts();
+  resetStopWatchTimer();
 }
 
 // Timer functions
