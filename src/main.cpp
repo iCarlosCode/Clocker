@@ -235,20 +235,23 @@ void printHhMmSsDsFromCSeconds() {
 void generateBody() {
   printMenu(MODE);
 
-  if (MODE == STOPWATCH_MODE || MODE == STOPWATCH_MODE_RUNNING) {
-    printHhMmSsDsFromCSeconds();
-  }
-  else if (MODE == TIMER_MODE || MODE == TIMER_MODE_RUNNING) {
-    printHhMmSsFromSeconds(timeS);
-  }
-  else if (MODE == TIMER_MODE_EDITING) {
-    printHhMmSsEdit();
-  }
-  else if (MODE == ALARM_MODE) {
-    printHhMmSsFromSeconds(timeAlarmS);
-  }
-  else if (MODE == ALARM_MODE_EDITING) {
-    printHhMmSsEdit();
+  switch (MODE)
+  {
+    case STOPWATCH_MODE:
+    case STOPWATCH_MODE_RUNNING:
+      printHhMmSsDsFromCSeconds();
+      break;
+    case TIMER_MODE:
+    case TIMER_MODE_RUNNING:
+      printHhMmSsFromSeconds(timeS);
+      break;
+    case ALARM_MODE:
+      printHhMmSsFromSeconds(timeAlarmS);
+      break;
+    case TIMER_MODE_EDITING:
+    case ALARM_MODE_EDITING:
+      printHhMmSsEdit();
+      break;
   }
 }
 
