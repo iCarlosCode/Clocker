@@ -200,6 +200,20 @@ void loop() {
   //printAlarme(30000);
   generateBody();
 }
+void printHhMmSsFromSeconds(unsigned long totalSegundos) {
+    noInterrupts();
+    int h = totalSegundos / 3600;
+    int m = (totalSegundos % 3600) / 60;
+    int s = totalSegundos % 60;
+    interrupts();
+
+    char buffer[20];
+    // Formato: HH:MM:SS
+    sprintf(buffer, "%02d:%02d:%02d   ", h, m, s);
+    lcd.setCursor(MENU_PADDING, 0);
+    lcd.print(buffer);
+    //Serial.println(totalSegundos);
+}
 
 void generateBody() {
   switch (MODE)
@@ -251,19 +265,7 @@ void generateBody() {
     lcd.print(buffer);
   }
   else if (MODE == TIMER_MODE || MODE == TIMER_MODE_RUNNING) {
-    noInterrupts();
-    unsigned long totalSegundos = timeS;
-    int h = totalSegundos / 3600;
-    int m = (totalSegundos % 3600) / 60;
-    int s = totalSegundos % 60;
-    interrupts();
-
-    char buffer[20];
-    // Formato: HH:MM:SS
-    sprintf(buffer, "%02d:%02d:%02d   ", h, m, s);
-    lcd.setCursor(MENU_PADDING, 0);
-    lcd.print(buffer);
-    //Serial.println(totalSegundos);
+    printHhMmSsFromSeconds(timeS);
   }
   else if (MODE == TIMER_MODE_EDITING) {
     char buffer[20];
