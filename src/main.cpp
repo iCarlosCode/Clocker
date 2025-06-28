@@ -294,7 +294,7 @@ void printMenu(int mode) {
       lcd.print("CLOCK");
       break;
     case (CLOCK_EDIT_MODE):
-      printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, 'M', byte(5) /*➡*/);
+      printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, ' ', byte(5) /*➡*/);
       lcd.setCursor(MENU_PADDING, 0);
       lcd.print("CLOCKE");
       break;
@@ -304,7 +304,7 @@ void printMenu(int mode) {
       //lcd.print("STW");
       break;
       case (STOPWATCH_MODE_RUNNING):
-      printMenuButtons(' ', byte(4) /*⏸*/, 'M', 'R');
+      printMenuButtons(' ', byte(4) /*⏸*/, ' ', 'R');
       //lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("STWR");
       break;
@@ -319,7 +319,7 @@ void printMenu(int mode) {
       //lcd.print("TIMERUNING");
       break;
     case (TIMER_MODE_EDITING):
-      printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, 'M', byte(5) /*➡*/);
+      printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, ' ', byte(5) /*➡*/);
       //lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("TIMEREd");
       break;
@@ -329,7 +329,7 @@ void printMenu(int mode) {
       //lcd.print("ALARM");
       break;
     case (ALARM_MODE_EDITING):
-      printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, 'M', byte(5) /*➡*/);
+      printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, ' ', byte(5) /*➡*/);
       //lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("ALARMed");
       break;
