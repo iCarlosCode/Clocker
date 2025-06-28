@@ -22,7 +22,10 @@ void isrBtnTL();
 void isrBtnTR();
 void isrBtnLL();
 void isrBtnLR();
-// Blinker
+
+// Editing and Blinker
+void changeEditVariableValue(volatile int * edit_variable, int max, int min, int delta);
+void defaultChangeEditVariableValue(int delta);
 void changeBlinkingState();
 void setupBlinkingTimer();
 
@@ -366,54 +369,15 @@ void isrBtnTL() {
     case TIMER_MODE_EDITING:
       if (edit_cursor == 0)
       {
-        noInterrupts();
-        if (edit_h == 0)
-          edit_h = 100;
-        edit_h--;
-        interrupts();
+        changeEditVariableValue(&edit_h, 99, 0, 1);
       }
-      else if (edit_cursor == 1)
+      else
       {
-        noInterrupts();
-        edit_m--;
-        if (edit_m < 0)
-          edit_m = 59;
-        interrupts();
-      }
-      else if (edit_cursor == 2)
-      {
-        noInterrupts();
-        edit_s--;
-        if (edit_s < 0)
-          edit_s = 59;
-        interrupts();
+        defaultChangeEditVariableValue(1);
       }
       break;
     case ALARM_MODE_EDITING:
-      if (edit_cursor == 0)
-      {
-        noInterrupts();
-        if (edit_h == 0)
-          edit_h = 23;
-        edit_h--;
-        interrupts();
-      }
-      else if (edit_cursor == 1)
-      {
-        noInterrupts();
-        edit_m--;
-        if (edit_m < 0)
-          edit_m = 59;
-        interrupts();
-      }
-      else if (edit_cursor == 2)
-      {
-        noInterrupts();
-        edit_s--;
-        if (edit_s < 0)
-          edit_s = 59;
-        interrupts();
-      }
+      defaultChangeEditVariableValue(1);
       break;
     default:
       break;
@@ -442,56 +406,15 @@ void isrBtnTR() {
       stopTimer();
       break;
     case TIMER_MODE_EDITING:
-      if (edit_cursor == 0)
-      {
-        noInterrupts();
-        edit_h++;
-        if (edit_h > 99)
-          edit_h = 0;
-        interrupts();
+      if (edit_cursor == 0) {
+        changeEditVariableValue(&edit_h, 99, 0, -1);
       }
-      else if (edit_cursor == 1)
-      {
-        noInterrupts();
-        edit_m++;
-        if (edit_m > 59)
-          edit_m = 0;
-        interrupts();
-      }
-      else if (edit_cursor == 2)
-      {
-        noInterrupts();
-        edit_s++;
-        if (edit_s > 59)
-          edit_s = 0;
-        interrupts();
+      else {
+        defaultChangeEditVariableValue(-1);
       }
       break;
     case ALARM_MODE_EDITING:
-      if (edit_cursor == 0)
-      {
-        noInterrupts();
-        edit_h++;
-        if (edit_h > 23)
-          edit_h = 0;
-        interrupts();
-      }
-      else if (edit_cursor == 1)
-      {
-        noInterrupts();
-        edit_m++;
-        if (edit_m > 59)
-          edit_m = 0;
-        interrupts();
-      }
-      else if (edit_cursor == 2)
-      {
-        noInterrupts();
-        edit_s++;
-        if (edit_s > 59)
-          edit_s = 0;
-        interrupts();
-      }
+      defaultChangeEditVariableValue(-1);
       break;
     default:
       break;
@@ -510,7 +433,6 @@ void isrBtnLL() {
   //if (MODE > 8) {
   //  MODE = 0;
   //}
-
   if (MODE == CLOCK_MODE) {
     MODE = STOPWATCH_MODE;
   } else if (MODE == STOPWATCH_MODE) {
@@ -589,7 +511,30 @@ void isrBtnLR() {
   }
 }
 
-// Blinking Functions
+// Editing and Blinking Functions
+void changeEditVariableValue(volatile int * edit_variable, int max, int min, int delta) {
+  noInterrupts();
+  *edit_variable += delta;
+  
+  if (*edit_variable > max)
+  *edit_variable = min;
+  else if (*edit_variable < min)
+  *edit_variable = max;
+  interrupts();
+}
+
+void defaultChangeEditVariableValue(int delta) {
+  if (edit_cursor == 0) {
+    changeEditVariableValue(&edit_h, 23, 0, delta);
+  }
+  else if (edit_cursor == 1) {
+    changeEditVariableValue(&edit_m, 59, 0, delta);
+  }
+  else if (edit_cursor == 2) {
+    changeEditVariableValue(&edit_s, 59, 0, delta);
+  }
+}
+
 void changeBlinkingState() {
   noInterrupts();
   edit_blink_state = !edit_blink_state;
