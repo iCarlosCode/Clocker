@@ -132,6 +132,7 @@ int const ALARM_MODE_EDITING = 8;
 volatile int MODE = 0;
 volatile unsigned long timeCs = 0;
 volatile unsigned long timeS = 300;
+volatile unsigned long timeAlarmS = 28800;
 
 // MODO DE EDIÇÂO
 volatile int edit_cursor = 0;
@@ -200,6 +201,21 @@ void loop() {
   //printAlarme(30000);
   generateBody();
 }
+
+void printHhMmSsEdit() {
+    char buffer[20];
+    // Formato: HH:MM:SS
+    sprintf(buffer, "%02d:%02d:%02d   ", edit_h, edit_m, edit_s);
+    if (edit_blink_state) 
+    {
+      // Set the cursor to blink on HH, MM or SS
+      buffer[edit_cursor * 3] = ' ';
+      buffer[edit_cursor * 3 + 1] = ' ';
+    }
+    lcd.setCursor(MENU_PADDING, 0);
+    lcd.print(buffer);
+}
+
 void printHhMmSsFromSeconds(unsigned long totalSegundos) {
     noInterrupts();
     int h = totalSegundos / 3600;
@@ -268,17 +284,13 @@ void generateBody() {
     printHhMmSsFromSeconds(timeS);
   }
   else if (MODE == TIMER_MODE_EDITING) {
-    char buffer[20];
-    // Formato: HH:MM:SS
-    sprintf(buffer, "%02d:%02d:%02d   ", edit_h, edit_m, edit_s);
-    if (edit_blink_state) 
-    {
-      // Set the cursor to blink on HH, MM or SS
-      buffer[edit_cursor * 3] = ' ';
-      buffer[edit_cursor * 3 + 1] = ' ';
-    }
-    lcd.setCursor(MENU_PADDING, 0);
-    lcd.print(buffer);
+    printHhMmSsEdit();
+  }
+  else if (MODE == ALARM_MODE) {
+    printHhMmSsFromSeconds(timeAlarmS);
+  }
+  else if (MODE == ALARM_MODE_EDITING) {
+    printHhMmSsEdit();
   }
 }
 
@@ -447,14 +459,14 @@ void printMenu(int mode) {
       //lcd.print("TIMEREd");
       break;
     case (ALARM_MODE):
-      printMenuButtons(' ', ' ', 'M', ' ');
-      lcd.setCursor(MENU_PADDING, 0);
-      lcd.print("ALARM");
+      printMenuButtons('E', ' ', 'M', ' ');
+      //lcd.setCursor(MENU_PADDING, 0);
+      //lcd.print("ALARM");
       break;
     case (ALARM_MODE_EDITING):
-      printMenuButtons(' ', ' ', 'M', ' ');
-      lcd.setCursor(MENU_PADDING, 0);
-      lcd.print("ALARMed");
+      printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, 'M', byte(5) /*➡*/);
+      //lcd.setCursor(MENU_PADDING, 0);
+      //lcd.print("ALARMed");
       break;
     default:
       break;
@@ -482,7 +494,9 @@ void isrBtnTL() {
     case ALARM_MODE:
       noInterrupts();
       MODE = ALARM_MODE_EDITING;
+      edit_cursor = 0;
       interrupts();
+      setupBlinkingTimer();
       break;
     case TIMER_MODE_EDITING:
       if (edit_cursor == 0)
@@ -509,9 +523,33 @@ void isrBtnTL() {
           edit_s = 59;
         interrupts();
       }
-      
       break;
-    
+    case ALARM_MODE_EDITING:
+      if (edit_cursor == 0)
+      {
+        noInterrupts();
+        if (edit_h == 0)
+          edit_h = 23;
+        edit_h--;
+        interrupts();
+      }
+      else if (edit_cursor == 1)
+      {
+        noInterrupts();
+        edit_m--;
+        if (edit_m < 0)
+          edit_m = 59;
+        interrupts();
+      }
+      else if (edit_cursor == 2)
+      {
+        noInterrupts();
+        edit_s--;
+        if (edit_s < 0)
+          edit_s = 59;
+        interrupts();
+      }
+      break;
     default:
       break;
   }
@@ -564,6 +602,32 @@ void isrBtnTR() {
         interrupts();
       }
       break;
+    case ALARM_MODE_EDITING:
+      if (edit_cursor == 0)
+      {
+        noInterrupts();
+        edit_h++;
+        if (edit_h > 23)
+          edit_h = 0;
+        interrupts();
+      }
+      else if (edit_cursor == 1)
+      {
+        noInterrupts();
+        edit_m++;
+        if (edit_m > 59)
+          edit_m = 0;
+        interrupts();
+      }
+      else if (edit_cursor == 2)
+      {
+        noInterrupts();
+        edit_s++;
+        if (edit_s > 59)
+          edit_s = 0;
+        interrupts();
+      }
+      break;
     default:
       break;
   }
@@ -588,6 +652,11 @@ void isrBtnLL() {
     MODE = TIMER_MODE;
   } else if (MODE == TIMER_MODE) {
     MODE = ALARM_MODE;
+    noInterrupts();
+    edit_h = timeAlarmS / 3600;
+    edit_m = (timeAlarmS % 3600) / 60;
+    edit_s = timeAlarmS % 60;
+    interrupts();
   } else if (MODE == ALARM_MODE) {
     MODE = CLOCK_MODE;
   }
@@ -635,7 +704,16 @@ void isrBtnLR() {
         setupTimer(); // Always update timeS before calling this
         interrupts();
       }
-      
+      break;
+    case ALARM_MODE_EDITING:
+      edit_cursor++;
+      if (edit_cursor > 2) {
+        noInterrupts();
+        timeAlarmS = edit_h * 3600UL + edit_m * 60UL + edit_s;
+        MODE = ALARM_MODE;
+        //setupTimer(); // TODO: Adjunst ALARRME AQUI // Always update timeS before calling this
+        interrupts();
+      }
       break;
     default:
       break;
