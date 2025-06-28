@@ -294,62 +294,6 @@ void generateBody() {
   }
 }
 
-void printCronometro(unsigned long centesimos) {
-  int totalSegundos = centesimos / 100;
-  int h = totalSegundos / 3600;
-  int m = (totalSegundos % 3600) / 60;
-  int s = totalSegundos % 60;
-  int cs = centesimos % 100; // centésimos restantes
-
-  char buffer[20];
-  // Formato: HH:MM:SS.CC
-  sprintf(buffer, "%02d:%02d:%02d.%02d", h, m, s, cs);
-  
-  lcd.setCursor(0, 0);
-  //lcd.print("");
-  
-  lcd.setCursor(0, 1);
-  lcd.print("M");
-  
-  lcd.setCursor(15, 0);
-  lcd.write(byte(4)); // ⏸
-  //lcd.write(byte(0)); // ▶
-
-  lcd.setCursor(15, 1);
-  lcd.print("R");
-
-  lcd.setCursor(MENU_PADDING, 0);
-  lcd.print(buffer);
-}
-
-void printTimer(unsigned long centesimos) {
-  int totalSegundos = centesimos / 100;
-  int h = totalSegundos / 3600;
-  int m = (totalSegundos % 3600) / 60;
-  int s = totalSegundos % 60;
-  int cs = centesimos % 100; // centésimos restantes
-
-  char buffer[20];
-  // Formato: HH:MM:SS.CC
-  sprintf(buffer, "%02d:%02d:%02d.%02d", h, m, s, cs);
-  
-  lcd.setCursor(0, 0);
-  lcd.print("E");
-  
-  lcd.setCursor(0, 1);
-  lcd.print("M");
-  
-  lcd.setCursor(15, 0);
-  lcd.write(byte(4)); // ⏸
-  //lcd.write(byte(0)); // ▶
-
-  lcd.setCursor(15, 1);
-  lcd.print("R");
-
-  lcd.setCursor(MENU_PADDING, 0);
-  //lcd.print(buffer);
-}
-
 void exibirDataHora(RTC_DS1307& rtc, LiquidCrystal_I2C& lcd) {
   DateTime now = rtc.now();
 
@@ -371,37 +315,8 @@ void exibirDataHora(RTC_DS1307& rtc, LiquidCrystal_I2C& lcd) {
   lcd.print(linha2);
 }
 
-void printAlarme(unsigned long alarmeDueTime) {
-  int totalSegundos = alarmeDueTime;
-  int h = totalSegundos / 3600;
-  int m = (totalSegundos % 3600) / 60;
-  int s = totalSegundos % 60;
-  
-  //char buffer[20];
-  // Formato: HH:MM:SS
-  //sprintf(buffer, "%02d:%02d:%02d", h, m, s);
-  
-  lcd.setCursor(0, 0);
-  //lcd.print("E");
-  lcd.write(byte(2));
 
-  lcd.setCursor(0, 1);
-  lcd.print("M");
-  
-  lcd.setCursor(15, 0);
-  lcd.write(byte(3)); // ↓
-  //lcd.write(byte(4)); // ⏸
-  //lcd.write(byte(0)); // ▶
-
-  lcd.setCursor(15, 1);
-  lcd.write(5);
-  //lcd.print("R");
-
-  lcd.setCursor(MENU_PADDING, 0);
-  lcd.print("08:00");
-  //lcd.print(buffer);
-}
-
+// Menu Functions
 
 void writeToLcd(int column, int row, uint8_t value) {
   lcd.setCursor(column, row);
