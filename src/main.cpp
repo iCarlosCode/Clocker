@@ -17,9 +17,6 @@
 #define BTNLR 7
 
 void exibirDataHora(RTC_DS1307& rtc, LiquidCrystal_I2C& lcd);
-void printCronometro(unsigned long centesimos);
-void printAlarme(unsigned long alarmeDueTime);
-void printTimer(unsigned long centesimos);
 void printMenu(int mode);
 void isrBtnTL();
 void isrBtnTR();
@@ -119,6 +116,7 @@ byte arrowRightSymbol[8] = {
 bool DEBUG_MENU = true;
 int const MENU_PADDING = 2;
 
+volatile int MODE = 0;
 int const CLOCK_MODE = 0;
 int const CLOCK_EDIT_MODE = 1;
 int const STOPWATCH_MODE = 2;
@@ -129,7 +127,7 @@ int const TIMER_MODE_EDITING = 6;
 int const ALARM_MODE = 7;
 int const ALARM_MODE_EDITING = 8;
 
-volatile int MODE = 0;
+// Time variables
 volatile unsigned long timeCs = 0;
 volatile unsigned long timeS = 300;
 volatile unsigned long timeAlarmS = 28800;
@@ -154,14 +152,7 @@ void setup() {
   attachPinChangeInterrupt(digitalPinToPinChangeInterrupt(BTNLL), isrBtnLL, FALLING);
   attachPinChangeInterrupt(digitalPinToPinChangeInterrupt(BTNLR), isrBtnLR, FALLING);
 
-  //Timer1.stop(); // Começa parado
-
-  // put your setup code here, to run once:
-  //LCD.begin(16, 2);
-  //LCD.setCursor(0, 0);
-  //LCD.print("Oi mundo!");
   Serial.begin(9600);
-  Serial.print("Começar");
 
   Wire.begin();
   rtc.begin();
@@ -184,21 +175,11 @@ void setup() {
   }
 }
 
-unsigned long count = 100000;
 
 void loop() {
-  //Timer1.start();
   unsigned long currentMillis = millis(); 
-
-  // Alternar o estado de piscar
   
   //exibirDataHora(rtc, lcd);
-
-  //delay(1000);
-  // put your main code here, to run repeatedly:
-  //printCronometro(10000);
-  //printTimer(count--);
-  //printAlarme(30000);
   generateBody();
 }
 
@@ -232,38 +213,7 @@ void printHhMmSsFromSeconds(unsigned long totalSegundos) {
 }
 
 void generateBody() {
-  switch (MODE)
-  {
-    case CLOCK_MODE:
-      printMenu(CLOCK_MODE);
-      break;
-    case CLOCK_EDIT_MODE:
-      printMenu(CLOCK_EDIT_MODE);
-      break;
-    case STOPWATCH_MODE:
-      printMenu(STOPWATCH_MODE);
-      break;
-    case STOPWATCH_MODE_RUNNING:
-      printMenu(STOPWATCH_MODE_RUNNING);
-      break;
-    case TIMER_MODE:
-      printMenu(TIMER_MODE);
-      break;
-    case TIMER_MODE_RUNNING:
-      printMenu(TIMER_MODE_RUNNING);
-      break;
-    case TIMER_MODE_EDITING:
-      printMenu(TIMER_MODE_EDITING);
-      break;
-    case ALARM_MODE:
-      printMenu(ALARM_MODE);
-      break;
-    case ALARM_MODE_EDITING:
-      printMenu(ALARM_MODE_EDITING);
-      break;
-    default:
-      break;
-  }
+  printMenu(MODE);
 
   if (MODE == STOPWATCH_MODE || MODE == STOPWATCH_MODE_RUNNING) {
     noInterrupts();
@@ -674,7 +624,9 @@ void resetStopWatchTimer() {
 }
 
 void incrementStopWatchTime() {
+  noInterrupts();
   timeCs++;
+  interrupts();
 }
 
 void setupStopWatchTimer() {
