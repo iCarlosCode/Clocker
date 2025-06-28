@@ -25,6 +25,10 @@ void isrBtnTL();
 void isrBtnTR();
 void isrBtnLL();
 void isrBtnLR();
+// Blinker
+void changeBlinkingState();
+void setupBlinkingTimer();
+
 // Stopwatch
 void startStopWatchTimer();
 void stopStopWatchTimer();
@@ -113,6 +117,8 @@ byte arrowRightSymbol[8] = {
   0b00000
 };
 
+int const MENU_PADDING = 2;
+
 int const CLOCK_MODE = 0;
 int const CLOCK_EDIT_MODE = 1;
 int const STOPWATCH_MODE = 2;
@@ -125,13 +131,14 @@ int const ALARM_MODE_EDITING = 8;
 
 volatile int MODE = 0;
 volatile unsigned long timeCs = 0;
-volatile unsigned long timeS = 0;
+volatile unsigned long timeS = 300;
 
 // MODO DE EDIÇÂO
 volatile int edit_cursor = 0;
 volatile int edit_h = 0;
 volatile int edit_m = 0;
 volatile int edit_s = 0;
+volatile bool edit_blink_state = false;
 
 void setup() {
   // Configura os pinos como entrada com pull-up
@@ -191,7 +198,6 @@ void loop() {
   //printCronometro(10000);
   //printTimer(count--);
   //printAlarme(30000);
-
   generateBody();
 }
 
@@ -241,7 +247,7 @@ void generateBody() {
     char buffer[20];
     // Formato: HH:MM:SS.CC
     sprintf(buffer, "%02d:%02d:%02d.%02d", h, m, s, cs);
-    lcd.setCursor(2, 0);
+    lcd.setCursor(MENU_PADDING, 0);
     lcd.print(buffer);
   }
   else if (MODE == TIMER_MODE || MODE == TIMER_MODE_RUNNING) {
@@ -255,23 +261,21 @@ void generateBody() {
     char buffer[20];
     // Formato: HH:MM:SS
     sprintf(buffer, "%02d:%02d:%02d   ", h, m, s);
-    lcd.setCursor(2, 0);
+    lcd.setCursor(MENU_PADDING, 0);
     lcd.print(buffer);
-    Serial.println(totalSegundos);
+    //Serial.println(totalSegundos);
   }
   else if (MODE == TIMER_MODE_EDITING) {
-    noInterrupts();
-    
-    unsigned long totalSegundos = timeS;
-    int h = totalSegundos / 3600;
-    int m = (totalSegundos % 3600) / 60;
-    int s = totalSegundos % 60;
-    interrupts();
-
     char buffer[20];
     // Formato: HH:MM:SS
     sprintf(buffer, "%02d:%02d:%02d   ", edit_h, edit_m, edit_s);
-    lcd.setCursor(2, 0);
+    if (edit_blink_state) 
+    {
+      // Set the cursor to blink on HH, MM or SS
+      buffer[edit_cursor * 3] = ' ';
+      buffer[edit_cursor * 3 + 1] = ' ';
+    }
+    lcd.setCursor(MENU_PADDING, 0);
     lcd.print(buffer);
   }
 }
@@ -300,7 +304,7 @@ void printCronometro(unsigned long centesimos) {
   lcd.setCursor(15, 1);
   lcd.print("R");
 
-  lcd.setCursor(2, 0);
+  lcd.setCursor(MENU_PADDING, 0);
   lcd.print(buffer);
 }
 
@@ -328,7 +332,7 @@ void printTimer(unsigned long centesimos) {
   lcd.setCursor(15, 1);
   lcd.print("R");
 
-  lcd.setCursor(2, 0);
+  lcd.setCursor(MENU_PADDING, 0);
   //lcd.print(buffer);
 }
 
@@ -347,7 +351,7 @@ void exibirDataHora(RTC_DS1307& rtc, LiquidCrystal_I2C& lcd) {
   lcd.print("E");
   lcd.setCursor(0, 1);
   lcd.print("M");
-  lcd.setCursor(2, 0);
+  lcd.setCursor(MENU_PADDING, 0);
   lcd.print(linha1);
   lcd.setCursor(2, 1);
   lcd.print(linha2);
@@ -379,7 +383,7 @@ void printAlarme(unsigned long alarmeDueTime) {
   lcd.write(5);
   //lcd.print("R");
 
-  lcd.setCursor(2, 0);
+  lcd.setCursor(MENU_PADDING, 0);
   lcd.print("08:00");
   //lcd.print(buffer);
 }
@@ -407,47 +411,47 @@ void printMenu(int mode) {
   {
     case (CLOCK_MODE):
       printMenuButtons('E', ' ', 'M', ' ');
-      lcd.setCursor(2, 0);
+      lcd.setCursor(MENU_PADDING, 0);
       lcd.print("CLOCK");
       break;
     case (CLOCK_EDIT_MODE):
       printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, 'M', byte(5) /*➡*/);
-      lcd.setCursor(2, 0);
+      lcd.setCursor(MENU_PADDING, 0);
       lcd.print("CLOCKE");
       break;
     case (STOPWATCH_MODE):
       printMenuButtons(' ', byte(0) /*▶*/, 'M', 'R');
-      //lcd.setCursor(2, 0);
+      //lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("STW");
       break;
       case (STOPWATCH_MODE_RUNNING):
       printMenuButtons(' ', byte(4) /*⏸*/, 'M', 'R');
-      //lcd.setCursor(2, 0);
+      //lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("STWR");
       break;
     case (TIMER_MODE):
       printMenuButtons('E', byte(0) /*▶*/, 'M', 'R');
-      lcd.setCursor(2, 0);
+      lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("TIMER");
       break;
     case (TIMER_MODE_RUNNING):
-      printMenuButtons(' ', byte(4) /*⏸*/, 'M', 'R');
-      lcd.setCursor(2, 0);
+      printMenuButtons(' ', byte(4) /*⏸*/, ' ', 'R');
+      lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("TIMERUNING");
       break;
     case (TIMER_MODE_EDITING):
       printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, 'M', byte(5) /*➡*/);
-      //lcd.setCursor(2, 0);
+      //lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("TIMEREd");
       break;
     case (ALARM_MODE):
       printMenuButtons(' ', ' ', 'M', ' ');
-      lcd.setCursor(2, 0);
+      lcd.setCursor(MENU_PADDING, 0);
       lcd.print("ALARM");
       break;
     case (ALARM_MODE_EDITING):
       printMenuButtons(' ', ' ', 'M', ' ');
-      lcd.setCursor(2, 0);
+      lcd.setCursor(MENU_PADDING, 0);
       lcd.print("ALARMed");
       break;
     default:
@@ -470,6 +474,7 @@ void isrBtnTL() {
       noInterrupts();
       MODE = TIMER_MODE_EDITING;
       interrupts();
+      setupBlinkingTimer();
       break;
     case ALARM_MODE:
       noInterrupts();
@@ -609,6 +614,7 @@ void isrBtnLR() {
         noInterrupts();
         timeS = edit_h * 60 + edit_m * 60 + edit_s;
         MODE = TIMER_MODE;
+        setupTimer(); // Always update timeS before calling this
         interrupts();
       }
       
@@ -616,6 +622,18 @@ void isrBtnLR() {
     default:
       break;
   }
+}
+
+// Blinking Functions
+void changeBlinkingState() {
+  noInterrupts();
+  edit_blink_state = !edit_blink_state;
+  interrupts();
+}
+
+void setupBlinkingTimer() {
+  Timer1.initialize(750000); // 1000 microssegundos = 1 milissegundo
+  Timer1.attachInterrupt(changeBlinkingState);
 }
 
 // Stopwatch Functions
@@ -670,7 +688,7 @@ void stopTimer() {
 
 void resetTimer() {
   noInterrupts();
-  timeS = 356400;
+  timeS = edit_h * 60 + edit_m * 60 + edit_s;
   interrupts();
 }
 
@@ -682,7 +700,7 @@ void setupTimer() {
   Timer1.initialize(1000000); // 1000 microssegundos = 1 milissegundo
   Timer1.attachInterrupt(decrementTime);
   Timer1.stop();
-  noInterrupts();
-  timeS = 356400;
-  interrupts();
+  edit_h = timeS / 3600;
+  edit_m = (timeS % 3600) / 60;
+  edit_s = timeS % 60;
 }
