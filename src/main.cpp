@@ -116,7 +116,7 @@ byte arrowRightSymbol[8] = {
   0b00000,
   0b00000
 };
-
+bool DEBUG_MENU = true;
 int const MENU_PADDING = 2;
 
 int const CLOCK_MODE = 0;
@@ -473,6 +473,7 @@ void isrBtnTL() {
     case TIMER_MODE:
       noInterrupts();
       MODE = TIMER_MODE_EDITING;
+      edit_cursor = 0;
       interrupts();
       setupBlinkingTimer();
       break;
@@ -485,9 +486,9 @@ void isrBtnTL() {
       if (edit_cursor == 0)
       {
         noInterrupts();
+        if (edit_h == 0)
+          edit_h = 100;
         edit_h--;
-        if (edit_h < 0)
-          edit_h = 99;
         interrupts();
       }
       else if (edit_cursor == 1)
@@ -512,10 +513,15 @@ void isrBtnTL() {
     default:
       break;
   }
+  if (DEBUG_MENU)
+  {
+    Serial.println("TL" + String(MODE));
+  }
 }
 
 void isrBtnTR() {
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+
   switch (MODE)
   {
     case STOPWATCH_MODE:
@@ -559,10 +565,15 @@ void isrBtnTR() {
     default:
       break;
   }
+  if (DEBUG_MENU)
+  {
+    Serial.println("TR" + String(MODE));
+  }
 }
 
 void isrBtnLL() {
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+
   //Serial.println("M");
   //MODE++;
   //if (MODE > 8) {
@@ -590,10 +601,15 @@ void isrBtnLL() {
     default:
       break;
   }
+  if (DEBUG_MENU)
+  {
+    Serial.println("LL" + String(MODE));
+  }
 }
 
 void isrBtnLR() {
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  
   if (MODE == STOPWATCH_MODE || MODE == STOPWATCH_MODE_RUNNING) {
     resetStopWatchTimer();
   }
@@ -612,7 +628,7 @@ void isrBtnLR() {
       edit_cursor++;
       if (edit_cursor > 2) {
         noInterrupts();
-        timeS = edit_h * 60 + edit_m * 60 + edit_s;
+        timeS = edit_h * 3600UL + edit_m * 60UL + edit_s;
         MODE = TIMER_MODE;
         setupTimer(); // Always update timeS before calling this
         interrupts();
@@ -621,6 +637,10 @@ void isrBtnLR() {
       break;
     default:
       break;
+  }
+  if (DEBUG_MENU)
+  {
+    Serial.println("LR" + String(MODE));
   }
 }
 
@@ -688,7 +708,7 @@ void stopTimer() {
 
 void resetTimer() {
   noInterrupts();
-  timeS = edit_h * 60 + edit_m * 60 + edit_s;
+  timeS = edit_h * 3600UL + edit_m * 60UL + edit_s;
   interrupts();
 }
 
