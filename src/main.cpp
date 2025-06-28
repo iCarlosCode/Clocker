@@ -25,12 +25,21 @@ void isrBtnTL();
 void isrBtnTR();
 void isrBtnLL();
 void isrBtnLR();
+// Stopwatch
 void startStopWatchTimer();
 void stopStopWatchTimer();
 void resetStopWatchTimer();
 void incrementStopWatchTime();
 void setupStopWatchTimer();
+// Timer
+void startTimer();
+void stopTimer();
+void resetTimer();
+void incrementTime();
+void setupTimer();
 
+
+void generateBody();
 
 // RTC e LCD
 
@@ -116,6 +125,13 @@ int const ALARM_MODE_EDITING = 8;
 
 volatile int MODE = 0;
 volatile unsigned long timeCs = 0;
+volatile unsigned long timeS = 0;
+
+// MODO DE EDIÇÂO
+volatile int edit_cursor = 0;
+volatile int edit_h = 0;
+volatile int edit_m = 0;
+volatile int edit_s = 0;
 
 void setup() {
   // Configura os pinos como entrada com pull-up
@@ -175,9 +191,11 @@ void loop() {
   //printCronometro(10000);
   //printTimer(count--);
   //printAlarme(30000);
-  
-  
 
+  generateBody();
+}
+
+void generateBody() {
   switch (MODE)
   {
     case CLOCK_MODE:
@@ -210,6 +228,7 @@ void loop() {
     default:
       break;
   }
+
   if (MODE == STOPWATCH_MODE || MODE == STOPWATCH_MODE_RUNNING) {
     noInterrupts();
     int totalSegundos = timeCs / 100;
@@ -222,6 +241,36 @@ void loop() {
     char buffer[20];
     // Formato: HH:MM:SS.CC
     sprintf(buffer, "%02d:%02d:%02d.%02d", h, m, s, cs);
+    lcd.setCursor(2, 0);
+    lcd.print(buffer);
+  }
+  else if (MODE == TIMER_MODE || MODE == TIMER_MODE_RUNNING) {
+    noInterrupts();
+    unsigned long totalSegundos = timeS;
+    int h = totalSegundos / 3600;
+    int m = (totalSegundos % 3600) / 60;
+    int s = totalSegundos % 60;
+    interrupts();
+
+    char buffer[20];
+    // Formato: HH:MM:SS
+    sprintf(buffer, "%02d:%02d:%02d   ", h, m, s);
+    lcd.setCursor(2, 0);
+    lcd.print(buffer);
+    Serial.println(totalSegundos);
+  }
+  else if (MODE == TIMER_MODE_EDITING) {
+    noInterrupts();
+    
+    unsigned long totalSegundos = timeS;
+    int h = totalSegundos / 3600;
+    int m = (totalSegundos % 3600) / 60;
+    int s = totalSegundos % 60;
+    interrupts();
+
+    char buffer[20];
+    // Formato: HH:MM:SS
+    sprintf(buffer, "%02d:%02d:%02d   ", edit_h, edit_m, edit_s);
     lcd.setCursor(2, 0);
     lcd.print(buffer);
   }
@@ -280,7 +329,7 @@ void printTimer(unsigned long centesimos) {
   lcd.print("R");
 
   lcd.setCursor(2, 0);
-  lcd.print(buffer);
+  //lcd.print(buffer);
 }
 
 void exibirDataHora(RTC_DS1307& rtc, LiquidCrystal_I2C& lcd) {
@@ -368,28 +417,28 @@ void printMenu(int mode) {
       break;
     case (STOPWATCH_MODE):
       printMenuButtons(' ', byte(0) /*▶*/, 'M', 'R');
-      lcd.setCursor(2, 0);
-      lcd.print("STW");
+      //lcd.setCursor(2, 0);
+      //lcd.print("STW");
       break;
       case (STOPWATCH_MODE_RUNNING):
       printMenuButtons(' ', byte(4) /*⏸*/, 'M', 'R');
-      lcd.setCursor(2, 0);
-      lcd.print("STWR");
+      //lcd.setCursor(2, 0);
+      //lcd.print("STWR");
       break;
     case (TIMER_MODE):
       printMenuButtons('E', byte(0) /*▶*/, 'M', 'R');
       lcd.setCursor(2, 0);
-      lcd.print("TIMER");
+      //lcd.print("TIMER");
       break;
     case (TIMER_MODE_RUNNING):
       printMenuButtons(' ', byte(4) /*⏸*/, 'M', 'R');
       lcd.setCursor(2, 0);
-      lcd.print("TIMERUNING");
+      //lcd.print("TIMERUNING");
       break;
     case (TIMER_MODE_EDITING):
-      printMenuButtons(' ', byte(4) /*⏸*/, 'M', 'R');
-      lcd.setCursor(2, 0);
-      lcd.print("TIMEREd");
+      printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, 'M', byte(5) /*➡*/);
+      //lcd.setCursor(2, 0);
+      //lcd.print("TIMEREd");
       break;
     case (ALARM_MODE):
       printMenuButtons(' ', ' ', 'M', ' ');
@@ -409,29 +458,132 @@ void printMenu(int mode) {
 // Rotinas de interrupção
 void isrBtnTL() {
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-  Serial.println("A");
+
+  switch (MODE)
+  {
+    case CLOCK_MODE:
+      noInterrupts();
+      MODE = CLOCK_EDIT_MODE;
+      interrupts();
+      break;
+    case TIMER_MODE:
+      noInterrupts();
+      MODE = TIMER_MODE_EDITING;
+      interrupts();
+      break;
+    case ALARM_MODE:
+      noInterrupts();
+      MODE = ALARM_MODE_EDITING;
+      interrupts();
+      break;
+    case TIMER_MODE_EDITING:
+      if (edit_cursor == 0)
+      {
+        noInterrupts();
+        edit_h--;
+        if (edit_h < 0)
+          edit_h = 99;
+        interrupts();
+      }
+      else if (edit_cursor == 1)
+      {
+        noInterrupts();
+        edit_m--;
+        if (edit_m < 0)
+          edit_m = 59;
+        interrupts();
+      }
+      else if (edit_cursor == 2)
+      {
+        noInterrupts();
+        edit_s--;
+        if (edit_s < 0)
+          edit_s = 59;
+        interrupts();
+      }
+      
+      break;
+    
+    default:
+      break;
+  }
 }
 
 void isrBtnTR() {
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-  if (MODE == STOPWATCH_MODE) {
-    startStopWatchTimer();
-  }
-  else if (MODE == STOPWATCH_MODE_RUNNING) {
-    stopStopWatchTimer();
+  switch (MODE)
+  {
+    case STOPWATCH_MODE:
+      startStopWatchTimer();
+      break;
+    case STOPWATCH_MODE_RUNNING:
+      stopStopWatchTimer();
+      break;
+    case TIMER_MODE:
+      startTimer();
+      break;
+    case TIMER_MODE_RUNNING:
+      stopTimer();
+      break;
+    case TIMER_MODE_EDITING:
+      if (edit_cursor == 0)
+      {
+        noInterrupts();
+        edit_h++;
+        if (edit_h > 99)
+          edit_h = 0;
+        interrupts();
+      }
+      else if (edit_cursor == 1)
+      {
+        noInterrupts();
+        edit_m++;
+        if (edit_m > 59)
+          edit_m = 0;
+        interrupts();
+      }
+      else if (edit_cursor == 2)
+      {
+        noInterrupts();
+        edit_s++;
+        if (edit_s > 59)
+          edit_s = 0;
+        interrupts();
+      }
+      break;
+    default:
+      break;
   }
 }
 
 void isrBtnLL() {
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
   //Serial.println("M");
-  MODE++;
-  if (MODE > 8) {
-    MODE = 0;
+  //MODE++;
+  //if (MODE > 8) {
+  //  MODE = 0;
+  //}
+
+  if (MODE == CLOCK_MODE) {
+    MODE = STOPWATCH_MODE;
+  } else if (MODE == STOPWATCH_MODE) {
+    MODE = TIMER_MODE;
+  } else if (MODE == TIMER_MODE) {
+    MODE = ALARM_MODE;
+  } else if (MODE == ALARM_MODE) {
+    MODE = CLOCK_MODE;
   }
 
-  if (MODE == STOPWATCH_MODE) {
-    setupStopWatchTimer();
+  switch (MODE)
+  {
+    case STOPWATCH_MODE:
+      setupStopWatchTimer();
+      break;
+    case TIMER_MODE:
+      setupTimer();
+      break;
+    default:
+      break;
   }
 }
 
@@ -440,7 +592,33 @@ void isrBtnLR() {
   if (MODE == STOPWATCH_MODE || MODE == STOPWATCH_MODE_RUNNING) {
     resetStopWatchTimer();
   }
+
+  switch (MODE)
+  {
+    case STOPWATCH_MODE:
+    case STOPWATCH_MODE_RUNNING:
+      resetStopWatchTimer();
+      break;
+    case TIMER_MODE:
+    case TIMER_MODE_RUNNING:
+      resetTimer();
+      break;
+    case TIMER_MODE_EDITING:
+      edit_cursor++;
+      if (edit_cursor > 2) {
+        noInterrupts();
+        timeS = edit_h * 60 + edit_m * 60 + edit_s;
+        MODE = TIMER_MODE;
+        interrupts();
+      }
+      
+      break;
+    default:
+      break;
+  }
 }
+
+// Stopwatch Functions
 
 void startStopWatchTimer() {
   Timer1.start();
@@ -472,5 +650,39 @@ void setupStopWatchTimer() {
   Timer1.stop();
   noInterrupts();
   timeCs = 0;
+  interrupts();
+}
+
+// Timer functions
+void startTimer() {
+  Timer1.start();
+  noInterrupts();
+  MODE = TIMER_MODE_RUNNING;
+  interrupts();
+}
+
+void stopTimer() {
+  Timer1.stop();
+  noInterrupts();
+  MODE = TIMER_MODE;
+  interrupts();
+}
+
+void resetTimer() {
+  noInterrupts();
+  timeS = 356400;
+  interrupts();
+}
+
+void decrementTime() {
+  timeS--;
+}
+
+void setupTimer() {
+  Timer1.initialize(1000000); // 1000 microssegundos = 1 milissegundo
+  Timer1.attachInterrupt(decrementTime);
+  Timer1.stop();
+  noInterrupts();
+  timeS = 356400;
   interrupts();
 }
