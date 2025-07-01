@@ -121,14 +121,15 @@ int const MENU_PADDING = 2;
 
 volatile int MODE = 0;
 int const CLOCK_MODE = 0;
-int const CLOCK_EDIT_MODE = 1;
-int const STOPWATCH_MODE = 2;
-int const STOPWATCH_MODE_RUNNING = 3;
-int const TIMER_MODE = 4;
-int const TIMER_MODE_RUNNING = 5;
-int const TIMER_MODE_EDITING = 6;
-int const ALARM_MODE = 7;
-int const ALARM_MODE_EDITING = 8;
+int const CLOCK_MODE_EDITING = 1;
+int const DATE_MODE_EDITING = 2;
+int const STOPWATCH_MODE = 3;
+int const STOPWATCH_MODE_RUNNING = 4;
+int const TIMER_MODE = 5;
+int const TIMER_MODE_RUNNING = 6;
+int const TIMER_MODE_EDITING = 7;
+int const ALARM_MODE = 8;
+int const ALARM_MODE_EDITING = 9;
 
 // Time variables
 volatile unsigned long timeCs = 0;
@@ -250,6 +251,7 @@ void generateBody() {
       break;
     case TIMER_MODE_EDITING:
     case ALARM_MODE_EDITING:
+    case CLOCK_MODE_EDITING:
       printHhMmSsEdit();
       break;
   }
@@ -304,10 +306,10 @@ void printMenu(int mode) {
       //lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("CLOCK");
       break;
-    case (CLOCK_EDIT_MODE):
+    case (CLOCK_MODE_EDITING):
       printMenuButtons(byte(2) /*↑*/, byte(3) /*↓*/, ' ', byte(5) /*➡*/);
-      lcd.setCursor(MENU_PADDING, 0);
-      lcd.print("CLOCKE");
+      //lcd.setCursor(MENU_PADDING, 0);
+      //lcd.print("CLOCKE");
       break;
     case (STOPWATCH_MODE):
       printMenuButtons(' ', byte(0) /*▶*/, 'M', 'R');
@@ -357,8 +359,10 @@ void isrBtnTL() {
   {
     case CLOCK_MODE:
       noInterrupts();
-      MODE = CLOCK_EDIT_MODE;
+      MODE = CLOCK_MODE_EDITING;
+      edit_cursor = 0;
       interrupts();
+      setupBlinkingTimer();
       break;
     case TIMER_MODE:
       noInterrupts();
@@ -385,6 +389,7 @@ void isrBtnTL() {
       }
       break;
     case ALARM_MODE_EDITING:
+    case CLOCK_MODE_EDITING:
       defaultChangeEditVariableValue(1);
       break;
     default:
@@ -422,6 +427,7 @@ void isrBtnTR() {
       }
       break;
     case ALARM_MODE_EDITING:
+    case CLOCK_MODE_EDITING:
       defaultChangeEditVariableValue(-1);
       break;
     default:
@@ -507,6 +513,15 @@ void isrBtnLR() {
         timeAlarmS = edit_h * 3600UL + edit_m * 60UL + edit_s;
         MODE = ALARM_MODE;
         //setupTimer(); // TODO: Adjunst ALARRME AQUI // Always update timeS before calling this
+        interrupts();
+      }
+    case CLOCK_MODE_EDITING:
+      edit_cursor++;
+      if (edit_cursor > 2) {
+        noInterrupts();
+        timeAlarmS = edit_h * 3600UL + edit_m * 60UL + edit_s;
+        MODE = DATE_MODE_EDITING;
+        //setupTimer(); // TODO: Ajustar horário do  // Always update timeS before calling this
         interrupts();
       }
       break;
