@@ -24,6 +24,7 @@ void isrBtnLL();
 void isrBtnLR();
 
 // Editing and Blinker
+int getMaxDay(int year, int month);
 void changeEditVariableValue(volatile int * edit_variable, int max, int min, int delta);
 void defaultChangeEditVariableValue(int delta);
 void changeBlinkingState();
@@ -137,10 +138,15 @@ volatile unsigned long timeS = 300;
 volatile unsigned long timeAlarmS = 28800;
 
 // MODO DE EDIÇÂO
+#define MIN_YEAR 2000
+#define MAX_YEAR 2099
 volatile int edit_cursor = 0;
 volatile int edit_h = 0;
 volatile int edit_m = 0;
 volatile int edit_s = 0;
+volatile int edit_y = 2000;
+volatile int edit_mo = 2;
+volatile int edit_d = 1;
 volatile bool edit_blink_state = false;
 
 void setup() {
@@ -182,9 +188,43 @@ void setup() {
 
 void loop() {
   unsigned long currentMillis = millis(); 
+  if (MODE != CLOCK_MODE)
+  {
+    generateBody();
+    /* code */
+  }
+  else {
+    exibirDataHora(rtc, lcd);
+  }
   
-  //exibirDataHora(rtc, lcd);
-  generateBody();
+}
+
+void printYyMmDdEdit() {
+    char buffer[20];
+    // Formato: YYYY:MO:DD
+    sprintf(buffer, "%04d/%02d/%02d   ", edit_y, edit_mo, edit_d);
+    if (edit_blink_state && edit_cursor == 3) 
+    {
+      // Set the cursor to blink on Year
+      buffer[0] = ' ';
+      buffer[1] = ' ';
+      buffer[2] = ' ';
+      buffer[3] = ' ';
+    }
+    else if (edit_blink_state && edit_cursor == 4) 
+    {
+      // Set the cursor to blink on Month
+      buffer[5] = ' ';
+      buffer[6] = ' ';
+    }
+    else if (edit_blink_state && edit_cursor == 5) 
+    {
+      // Set the cursor to blink on Date
+      buffer[8] = ' ';
+      buffer[9] = ' ';
+    }
+    lcd.setCursor(MENU_PADDING, 0);
+    lcd.print(buffer);
 }
 
 void printHhMmSsEdit() {
@@ -254,6 +294,9 @@ void generateBody() {
     case CLOCK_MODE_EDITING:
       printHhMmSsEdit();
       break;
+    case DATE_MODE_EDITING:
+      printYyMmDdEdit();
+      break;
   }
 }
 
@@ -268,10 +311,10 @@ void exibirDataHora(RTC_DS1307& rtc, LiquidCrystal_I2C& lcd) {
   // Exemplo: 2025-06-24
   sprintf(linha2, "%04d-%02d-%02d", now.year(), now.month(), now.day());
 
-  lcd.setCursor(0, 0);
-  lcd.print("E");
-  lcd.setCursor(0, 1);
-  lcd.print("M");
+  //lcd.setCursor(0, 0);
+  //lcd.print("E");
+  //lcd.setCursor(0, 1);
+  //lcd.print("M");
   lcd.setCursor(MENU_PADDING, 0);
   lcd.print(linha1);
   lcd.setCursor(2, 1);
@@ -392,6 +435,20 @@ void isrBtnTL() {
     case CLOCK_MODE_EDITING:
       defaultChangeEditVariableValue(1);
       break;
+    case DATE_MODE_EDITING:
+      if (edit_cursor == 3)
+      {
+        changeEditVariableValue(&edit_y, MAX_YEAR, MIN_YEAR, 1);
+      }
+      else if (edit_cursor == 4)
+      {
+        changeEditVariableValue(&edit_mo, 12, 1, 1);
+      }
+      else if (edit_cursor == 5)
+      {
+        changeEditVariableValue(&edit_d, getMaxDay(edit_y, edit_mo), 1, 1);
+      }
+      break;
     default:
       break;
   }
@@ -429,6 +486,20 @@ void isrBtnTR() {
     case ALARM_MODE_EDITING:
     case CLOCK_MODE_EDITING:
       defaultChangeEditVariableValue(-1);
+      break;
+    case DATE_MODE_EDITING:
+      if (edit_cursor == 3)
+      {
+        changeEditVariableValue(&edit_y, MAX_YEAR, MIN_YEAR, -1);
+      }
+      else if (edit_cursor == 4)
+      {
+        changeEditVariableValue(&edit_mo, 12, 1, -1);
+      }
+      else if (edit_cursor == 5)
+      {
+        changeEditVariableValue(&edit_d, getMaxDay(edit_y, edit_mo), 1, -1);
+      }
       break;
     default:
       break;
@@ -525,6 +596,24 @@ void isrBtnLR() {
         interrupts();
       }
       break;
+    case DATE_MODE_EDITING:
+      edit_cursor++;
+      if (edit_cursor > 5)
+      {
+        noInterrupts();
+        rtc.adjust(DateTime(edit_y, edit_mo, edit_d, edit_h, edit_m, edit_s));
+        MODE = CLOCK_MODE;
+        interrupts();
+      }
+      
+      //if (edit_cursor > 2) {
+      //  noInterrupts();
+      //  timeAlarmS = edit_h * 3600UL + edit_m * 60UL + edit_s;
+      //  MODE = DATE_MODE_EDITING;
+      //  //setupTimer(); // TODO: Ajustar horário do  // Always update timeS before calling this
+      //  interrupts();
+      //}
+      break;
     default:
       break;
   }
@@ -535,6 +624,25 @@ void isrBtnLR() {
 }
 
 // Editing and Blinking Functions
+int getMaxDay(int year, int month) {
+  // Handle months with fixed number of days
+  switch (month) {
+    case 1: case 3: case 5: case 7: case 8: case 10: case 12:
+      return 31;
+    case 4: case 6: case 9: case 11:
+      return 30;
+    case 2:
+      // Leap year check
+      if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+        return 29;
+      } else {
+        return 28;
+      }
+    default:
+      return 0; // Invalid month
+  }
+}
+
 void changeEditVariableValue(volatile int * edit_variable, int max, int min, int delta) {
   noInterrupts();
   *edit_variable += delta;
