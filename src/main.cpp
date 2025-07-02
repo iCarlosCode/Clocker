@@ -289,9 +289,24 @@ void generateBody() {
     case ALARM_MODE:
       printHhMmSsFromSeconds(timeAlarmS);
       break;
+
+    // Criar um modo de CLOCKMODE para exibr o horário e atualizar qunado necessa´rio
+    case CLOCK_MODE_EDITING:
+      if (edit_cursor == -1)
+      {
+        DateTime now = rtc.now();
+        noInterrupts();
+        edit_cursor = 0;
+        edit_y = now.year();
+        edit_mo = now.month();
+        edit_d = now.day();
+        edit_h = now.hour();
+        edit_m = now.minute();
+        edit_s = now.second();
+        interrupts();
+      }
     case TIMER_MODE_EDITING:
     case ALARM_MODE_EDITING:
-    case CLOCK_MODE_EDITING:
       printHhMmSsEdit();
       break;
     case DATE_MODE_EDITING:
@@ -403,7 +418,7 @@ void isrBtnTL() {
     case CLOCK_MODE:
       noInterrupts();
       MODE = CLOCK_MODE_EDITING;
-      edit_cursor = 0;
+      edit_cursor = -1; // Flag 
       interrupts();
       setupBlinkingTimer();
       break;
@@ -601,7 +616,6 @@ void isrBtnLR() {
       if (edit_cursor > 5)
       {
         noInterrupts();
-        rtc.adjust(DateTime(edit_y, edit_mo, edit_d, edit_h, edit_m, edit_s));
         MODE = CLOCK_MODE;
         interrupts();
       }
