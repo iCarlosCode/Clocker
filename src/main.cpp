@@ -40,7 +40,6 @@ void setupStopWatchTimer();
 void startTimer();
 void stopTimer();
 void resetTimer();
-void incrementTime();
 void setupTimer();
 
 
@@ -781,6 +780,15 @@ void resetTimer() {
 
 void decrementTime() {
   timeS--;
+  if (timeS <= 0)
+  {
+    Timer1.stop();
+    noInterrupts();
+    MODE = TIMER_MODE;
+    resetTimer();
+    interrupts();
+  }
+  
 }
 
 void setupTimer() {
