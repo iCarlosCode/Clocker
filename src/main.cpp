@@ -188,15 +188,7 @@ void setup() {
 
 void loop() {
   unsigned long currentMillis = millis(); 
-  if (MODE != CLOCK_MODE)
-  {
-    generateBody();
-    /* code */
-  }
-  else {
-    exibirDataHora(rtc, lcd);
-  }
-  
+  generateBody();
 }
 
 void printYyMmDdEdit() {
@@ -273,6 +265,21 @@ void printHhMmSsDsFromCSeconds() {
     lcd.print(buffer);
 }
 
+void printHhMmSsYyMoDD() {
+    DateTime now = rtc.now();
+
+    char linha1[17];
+    char linha2[17];
+
+    sprintf(linha1, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
+    sprintf(linha2, "%04d/%02d/%02d", now.year(), now.month(), now.day());
+          
+    lcd.setCursor(MENU_PADDING, 0);
+    lcd.print(linha1);
+    lcd.setCursor(2, 1);
+    lcd.print(linha2);
+}
+
 void generateBody() {
   printMenu(MODE);
 
@@ -289,8 +296,9 @@ void generateBody() {
     case ALARM_MODE:
       printHhMmSsFromSeconds(timeAlarmS);
       break;
-
-    // Criar um modo de CLOCKMODE para exibr o horário e atualizar qunado necessa´rio
+    case CLOCK_MODE:
+      printHhMmSsYyMoDD();
+      break;
     case CLOCK_MODE_EDITING:
       if (edit_cursor == -1)
       {
@@ -406,6 +414,10 @@ void printMenu(int mode) {
       break;
     default:
       break;
+  }
+  if (MODE != CLOCK_MODE) {
+    lcd.setCursor(2, 1);
+    lcd.print("          ");
   }
 }
 
