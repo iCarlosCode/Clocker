@@ -52,6 +52,17 @@ RTC_DS1307 rtc;
 //LiquidCrystal LCD(R, E, D4, D5, D6, D7);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+byte alarmOn[8] = {
+  0b00100, //   #
+  0b01110, //  ###
+  0b01110, //  ###
+  0b11111, // #####
+  0b11111, // #####
+  0b00100, //   #
+  0b00100, //   #
+  0b00000  //
+};
+
 byte playSymbol[8] = {
   0b10000,
   0b11000,
@@ -136,6 +147,7 @@ int const ALARM_MODE_EDITING = 9;
 volatile unsigned long timeCs = 0;
 volatile unsigned long timeS = 300;
 volatile unsigned long timeAlarmS = 28800;
+volatile bool ALARM_ON = true;
 
 // MODO DE EDIÇÂO
 #define MIN_YEAR 2000
@@ -176,6 +188,7 @@ void setup() {
   lcd.createChar(3, downArrow);
   lcd.createChar(4, pauseSymbol);
   lcd.createChar(5, arrowRightSymbol);
+  lcd.createChar(6, alarmOn);
 
   if (!rtc.isrunning()) {
     lcd.print("RTC parado");
@@ -368,7 +381,7 @@ void printMenu(int mode) {
   switch (mode)
   {
     case (CLOCK_MODE):
-      printMenuButtons('E', ' ', 'M', ' ');
+      printMenuButtons('E', ALARM_ON ? byte(6) : ' ', 'M', ' ');
       //lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("CLOCK");
       break;
@@ -403,7 +416,7 @@ void printMenu(int mode) {
       //lcd.print("TIMEREd");
       break;
     case (ALARM_MODE):
-      printMenuButtons('E', ' ', 'M', ' ');
+      printMenuButtons('E', ALARM_ON ? byte(6) : ' ', 'M', ' ');
       //lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("ALARM");
       break;
@@ -490,6 +503,12 @@ void isrBtnTR() {
 
   switch (MODE)
   {
+    case CLOCK_MODE:
+    case ALARM_MODE:
+      noInterrupts();
+      ALARM_ON = !ALARM_ON;
+      interrupts();
+      break;
     case STOPWATCH_MODE:
       startStopWatchTimer();
       break;
@@ -610,16 +629,17 @@ void isrBtnLR() {
         noInterrupts();
         timeAlarmS = edit_h * 3600UL + edit_m * 60UL + edit_s;
         MODE = ALARM_MODE;
+        ALARM_ON = true;
         //setupTimer(); // TODO: Adjunst ALARRME AQUI // Always update timeS before calling this
         interrupts();
       }
+      break;
     case CLOCK_MODE_EDITING:
       edit_cursor++;
       if (edit_cursor > 2) {
         noInterrupts();
         timeAlarmS = edit_h * 3600UL + edit_m * 60UL + edit_s;
         MODE = DATE_MODE_EDITING;
-        //setupTimer(); // TODO: Ajustar horário do  // Always update timeS before calling this
         interrupts();
       }
       break;
