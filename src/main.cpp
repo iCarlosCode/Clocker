@@ -54,6 +54,28 @@ RTC_DS1307 rtc;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 byte alarmOn[8] = {
+  0b00100, // ⬜⬜⬛⬜⬜
+  0b00110, // ⬜⬜⬛⬛⬜
+  0b00111, // ⬜⬜⬛⬛⬛
+  0b00100, // ⬜⬜⬛⬜⬜
+  0b00100, // ⬜⬜⬛⬜⬜
+  0b00100, // ⬜⬜⬛⬜⬜
+  0b11100, // ⬛⬛⬛⬜⬜
+  0b11100  // ⬛⬛⬛⬜⬜
+};
+
+byte alarmOff[8] = {
+  0b00100, // ⬜⬜⬛⬜⬜
+  0b00110, // ⬜⬜⬛⬛⬜
+  0b10111, // ⬛⬜⬛⬛⬛
+  0b01100, // ⬜⬛⬛⬜⬜
+  0b00100, // ⬜⬜⬛⬜⬜
+  0b00110, // ⬜⬜⬛⬛⬜
+  0b11101, // ⬛⬛⬛⬜⬛
+  0b11100  // ⬛⬛⬛⬜⬜
+};
+
+byte buzzerOn[8] = {
   0b00100, //   #
   0b01110, //  ###
   0b01110, //  ###
@@ -191,6 +213,7 @@ void setup() {
   lcd.createChar(4, pauseSymbol);
   lcd.createChar(5, arrowRightSymbol);
   lcd.createChar(6, alarmOn);
+  lcd.createChar(7, alarmOff);
 
   if (!rtc.isrunning()) {
     lcd.print("RTC parado");
@@ -423,7 +446,7 @@ void printMenu(int mode) {
   switch (mode)
   {
     case (CLOCK_MODE):
-      printMenuButtons('E', ALARM_ON ? byte(6) : ' ', 'M', ' ');
+      printMenuButtons('E', ALARM_ON ? byte(6) : byte(7), 'M', ' ');
       //lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("CLOCK");
       break;
@@ -458,7 +481,7 @@ void printMenu(int mode) {
       //lcd.print("TIMEREd");
       break;
     case (ALARM_MODE):
-      printMenuButtons('E', ALARM_ON ? byte(6) : ' ', 'M', ' ');
+      printMenuButtons('E', ALARM_ON ? byte(6) : byte(7), 'M', ' ');
       //lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("ALARM");
       break;
