@@ -33,6 +33,13 @@
       "top": 150.2,
       "left": 672,
       "attrs": { "color": "green", "xray": "1", "bounce": "0" }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz1",
+      "top": -247.2,
+      "left": 97.8,
+      "attrs": { "volume": "0.1" }
     }
   ],
   "connections": [
@@ -51,7 +58,9 @@
     [ "btn4:2.r", "btn5:2.r", "black", [ "h19.4", "v48.2" ] ],
     [ "btn5:2.r", "btn3:2.r", "black", [ "h0.2", "v29", "h-355.2" ] ],
     [ "btn2:2.r", "btn3:2.r", "black", [ "h9.8", "v48.2", "h-19.2" ] ],
-    [ "rtc1:GND", "btn3:2.r", "black", [ "h0" ] ]
+    [ "rtc1:GND", "btn3:2.r", "black", [ "h0" ] ],
+    [ "bz1:1", "uno:GND.1", "black", [ "v28.8" ] ],
+    [ "bz1:2", "uno:13", "red", [ "v28.8", "h-0.4" ] ]
   ],
   "dependencies": {}
 }

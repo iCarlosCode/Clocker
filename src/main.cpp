@@ -41,6 +41,8 @@ void startTimer();
 void stopTimer();
 void resetTimer();
 void setupTimer();
+// Alarm
+void resetAlarm();
 
 
 void generateBody();
@@ -141,6 +143,7 @@ int const TIMER_MODE_RUNNING = 6;
 int const TIMER_MODE_EDITING = 7;
 int const ALARM_MODE = 8;
 int const ALARM_MODE_EDITING = 9;
+int const ALARM_MODE_RINGING = 10;
 
 // Time variables
 volatile unsigned long timeCs = 0;
@@ -195,11 +198,32 @@ void setup() {
     delay(2000);
     lcd.clear();
   }
+  DateTime now = rtc.now();
+  unsigned long ccd =
+    now.hour() * 3600UL +
+    now.minute() * 60UL +
+    now.second();
+  timeAlarmS = ccd+10;
 }
 
 
 void loop() {
-  unsigned long currentMillis = millis(); 
+  DateTime now = rtc.now();
+  unsigned long currentSeconds =
+    now.hour() * 3600UL +
+    now.minute() * 60UL +
+    now.second();
+
+   if (currentSeconds >= timeAlarmS && (currentSeconds - timeAlarmS) < 2 && ALARM_ON && MODE != ALARM_MODE_RINGING) {
+      noInterrupts();
+      MODE = ALARM_MODE_RINGING;
+      setupBlinkingTimer();
+      interrupts();
+   }
+   else if (MODE == ALARM_MODE_RINGING && (currentSeconds - timeAlarmS) > 10) {
+      resetAlarm();
+   }
+
   generateBody();
 }
 
@@ -277,6 +301,23 @@ void printHhMmSsDsFromCSeconds() {
     lcd.print(buffer);
 }
 
+void printAlarmRinging() {
+    DateTime now = rtc.now();
+
+    char linha1[17];
+    char linha2[17];
+
+    sprintf(linha1, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
+    if (edit_blink_state)
+    {
+      sprintf(linha1, "        ");
+      tone(13, 262, 250); // Toca um tom de 262Hz por 0,250 segundos
+    }
+    
+    lcd.setCursor(MENU_PADDING, 0);
+    lcd.print(linha1);
+}
+
 void printHhMmSsYyMoDD() {
     DateTime now = rtc.now();
 
@@ -331,6 +372,8 @@ void generateBody() {
       break;
     case DATE_MODE_EDITING:
       printYyMmDdEdit();
+    case ALARM_MODE_RINGING:
+      printAlarmRinging();
       break;
   }
 }
@@ -424,6 +467,11 @@ void printMenu(int mode) {
       //lcd.setCursor(MENU_PADDING, 0);
       //lcd.print("ALARMed");
       break;
+    case (ALARM_MODE_RINGING):
+      printMenuButtons(' ', 'x', ' ', ' ');
+      //lcd.setCursor(MENU_PADDING, 0);
+      //lcd.print("ALARMed");
+      break;
     default:
       break;
   }
@@ -507,6 +555,9 @@ void isrBtnTR() {
       noInterrupts();
       ALARM_ON = !ALARM_ON;
       interrupts();
+      break;
+    case ALARM_MODE_RINGING:
+      resetAlarm();
       break;
     case STOPWATCH_MODE:
       startStopWatchTimer();
@@ -798,4 +849,12 @@ void setupTimer() {
   edit_h = timeS / 3600;
   edit_m = (timeS % 3600) / 60;
   edit_s = timeS % 60;
+}
+
+// Alarm functions
+void resetAlarm() {
+  noInterrupts();
+  MODE = CLOCK_MODE;
+  Timer1.stop();
+  interrupts();
 }
