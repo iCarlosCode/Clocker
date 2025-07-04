@@ -582,6 +582,10 @@ void isrBtnTR() {
     case ALARM_MODE:
       noInterrupts();
       ALARM_ON = !ALARM_ON;
+      if (ALARM_ON)
+      {
+        tone(13, 4000, 80);
+      }
       interrupts();
       break;
     case ALARM_MODE_RINGING:
