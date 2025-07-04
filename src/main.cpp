@@ -172,6 +172,7 @@ volatile unsigned long timeCs = 0;
 volatile unsigned long timeS = 300;
 volatile unsigned long timeAlarmS = 28800;
 volatile bool ALARM_ON = true;
+volatile bool ringBuzzer = false;
 
 // MODO DE EDIÇÂO
 #define MIN_YEAR 2000
@@ -226,9 +227,8 @@ void setup() {
     now.hour() * 3600UL +
     now.minute() * 60UL +
     now.second();
-  timeAlarmS = ccd+10;
+  timeAlarmS = ccd+2;
 }
-
 
 void loop() {
   DateTime now = rtc.now();
@@ -237,16 +237,22 @@ void loop() {
     now.minute() * 60UL +
     now.second();
 
-   if (currentSeconds >= timeAlarmS && (currentSeconds - timeAlarmS) < 2 && ALARM_ON && MODE != ALARM_MODE_RINGING) {
-      noInterrupts();
-      MODE = ALARM_MODE_RINGING;
-      setupBlinkingTimer();
-      interrupts();
-   }
-   else if (MODE == ALARM_MODE_RINGING && (currentSeconds - timeAlarmS) > 10) {
-      resetAlarm();
-   }
+  if (currentSeconds >= timeAlarmS && (currentSeconds - timeAlarmS) < 2 && ALARM_ON && MODE != ALARM_MODE_RINGING) {
+     noInterrupts();
+     MODE = ALARM_MODE_RINGING;
+     setupBlinkingTimer();
+     interrupts();
+  }
+  else if (MODE == ALARM_MODE_RINGING && (currentSeconds - timeAlarmS) > 10) {
+     resetAlarm();
+  }
 
+  if (ringBuzzer && MODE == ALARM_MODE_RINGING) {
+    tone(13, 4000, 80);
+    delay(250);
+    tone(13, 4000, 80);
+    ringBuzzer = false;
+  }
   generateBody();
 }
 
@@ -334,7 +340,6 @@ void printAlarmRinging() {
     if (edit_blink_state)
     {
       sprintf(linha1, "        ");
-      tone(13, 262, 250); // Toca um tom de 262Hz por 0,250 segundos
     }
     
     lcd.setCursor(MENU_PADDING, 0);
@@ -788,11 +793,12 @@ void defaultChangeEditVariableValue(int delta) {
 void changeBlinkingState() {
   noInterrupts();
   edit_blink_state = !edit_blink_state;
+  ringBuzzer = true;
   interrupts();
 }
 
 void setupBlinkingTimer() {
-  Timer1.initialize(750000); // 1000 microssegundos = 1 milissegundo
+  Timer1.initialize(800000); // 1000 microssegundos = 1 milissegundo
   Timer1.attachInterrupt(changeBlinkingState);
 }
 
@@ -861,6 +867,9 @@ void decrementTime() {
     MODE = TIMER_MODE;
     resetTimer();
     interrupts();
+    tone(13, 4000, 80);
+    delay(250);
+    tone(13, 4000, 80);
   }
   
 }
