@@ -222,12 +222,6 @@ void setup() {
     delay(2000);
     lcd.clear();
   }
-  DateTime now = rtc.now();
-  unsigned long ccd =
-    now.hour() * 3600UL +
-    now.minute() * 60UL +
-    now.second();
-  timeAlarmS = ccd+2;
 }
 
 void loop() {
@@ -243,7 +237,7 @@ void loop() {
      setupBlinkingTimer();
      interrupts();
   }
-  else if (MODE == ALARM_MODE_RINGING && (currentSeconds - timeAlarmS) > 10) {
+  else if (MODE == ALARM_MODE_RINGING && (currentSeconds - timeAlarmS) > 30) {
      resetAlarm();
   }
 
@@ -252,6 +246,11 @@ void loop() {
     delay(250);
     tone(13, 4000, 80);
     ringBuzzer = false;
+  }
+
+  if (MODE == CLOCK_MODE && edit_cursor == 6) {
+    rtc.adjust(DateTime(edit_y, edit_mo, edit_d, edit_h, edit_m, edit_s));
+    edit_cursor = 0;
   }
   generateBody();
 }
@@ -400,6 +399,7 @@ void generateBody() {
       break;
     case DATE_MODE_EDITING:
       printYyMmDdEdit();
+      break;
     case ALARM_MODE_RINGING:
       printAlarmRinging();
       break;
@@ -720,7 +720,6 @@ void isrBtnLR() {
       edit_cursor++;
       if (edit_cursor > 2) {
         noInterrupts();
-        timeAlarmS = edit_h * 3600UL + edit_m * 60UL + edit_s;
         MODE = DATE_MODE_EDITING;
         interrupts();
       }
