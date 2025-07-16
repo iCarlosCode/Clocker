@@ -22,7 +22,12 @@ Remover o M dos edits no menu ✅
 SImplificar o edit com funções max, min, e variable✅
 Inverter os isr TL com TR no EDIT✅
 
-Editar hora
-Editar data
-Ativar/Desativar alarme
-Tocar/Alarme
+Editar hora ✅
+Editar data ✅
+Ativar/Desativar alarme✅
+Tocar/Alarme✅
+Ao inciar edição atualizar edits_ com valores atuais do RTC✅
+Exibir data e hora do RTC✅
+Parar timer ao chegar a 0✅
+Editar data e hora
+bug na edição de data
